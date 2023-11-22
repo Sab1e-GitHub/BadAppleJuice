@@ -1,8 +1,6 @@
 # BadAppleJuice
 本项目参考自EvilAppleJuice项目，用于在安卓设备上发送蓝牙广播包，唤起iPhone设备的弹窗。
 
-当前该项目功能不是特别完善，并且弹窗好像不能百分百唤起，后续作者会抽空更新。
-
 程序界面展示
 
 ![image](https://github.com/Sab1e-GitHub/BadAppleJuice/assets/72060564/a6061de1-c931-4a2d-ab13-bcab296ec3a4)
