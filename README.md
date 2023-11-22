@@ -4,7 +4,8 @@
 当前该项目功能不是特别完善，并且弹窗好像不能百分百唤起，后续作者会抽空更新。
 
 程序界面展示
-![image](https://github.com/Sab1e-GitHub/BadAppleJuice/assets/72060564/543280e7-7d28-4683-81c3-b30725898465)
+
+![image](https://github.com/Sab1e-GitHub/BadAppleJuice/assets/72060564/a6061de1-c931-4a2d-ab13-bcab296ec3a4)
 
 
 当前功能：
