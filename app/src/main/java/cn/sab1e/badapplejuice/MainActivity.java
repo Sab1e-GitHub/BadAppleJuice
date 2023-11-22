@@ -118,11 +118,10 @@ public class MainActivity extends AppCompatActivity {
             "高功率发送模式 广播距离远"
     };
     private int txMode = 3;
-    private String helpString = "\n程序功能介绍：\n\n随机设备：从27个设备中随机抽取。\n\n发包间隔时间：每次发送广播包的间隔时间，最低20ms。\n\n广播包超时时间：设置单个广播包持续广播的时间，最长为180000ms，设置为0即无时间限制，需要调用stopAdv()才能停止，这样会因为之前的广播包始终存在而导致无法发送更多广播包。建议值：1000ms\n\n广播包模式：控制广播包的延迟\n\n广播包发送功率：控制广播包发送范围\n\n该工具仅用于学习和交流使用，作者不承担用户使用该工具的任何后果。";
+    private String helpString = "\n程序功能介绍：\n\n随机设备：从27个设备中随机选取。\n\n广播包超时时间：设置单个广播包持续广播的时间，最长为180000ms，设置为0即无时间限制。建议值：1000ms\n\n广播包模式：控制广播包的延迟\n\n广播包发送功率：控制广播包发送范围\n\n该工具仅用于学习和交流使用，作者不承担用户使用该工具的任何后果。";
     private int spIndex = 0;
     private boolean deviceIsRandom = false;
     private boolean isStopThread = false;
-    private int intervalDelay = 1000;
     private int advTimeout = 1000;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -141,8 +140,8 @@ public class MainActivity extends AppCompatActivity {
         Switch sw_RandomDevice = findViewById(R.id.sw_RandomDevice);
         Button btn_help = findViewById(R.id.btn_help);
         TextView tv_Debug = findViewById(R.id.tv_Debug);
+        TextView tv_advState = findViewById(R.id.tv_advState);
         EditText et_Timeout = findViewById(R.id.et_Timeout);
-        EditText et_Interval = findViewById(R.id.et_Interval);
 
         Spinner devSpinner = findViewById(R.id.sp_SelectDevice);
         Spinner advModeSpinner = findViewById(R.id.sp_AdvMode);
@@ -176,7 +175,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 tv_Debug.append(helpString);
-                //startAdv(testData[0]);
             }
         });
         sw_RandomDevice.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -228,12 +226,7 @@ public class MainActivity extends AppCompatActivity {
                             public void run() {
                                 while (true) {
                                     try {
-                                        intervalDelay = Integer.parseInt(et_Interval.getText().toString());
-                                        if(intervalDelay<20){
-                                            tv_Debug.append("\n发包间隔时间不能低于20ms！已将其设置为20ms\n");
-                                            et_Interval.setText("20");
-                                            intervalDelay=20;
-                                        }
+
                                         advTimeout = Integer.parseInt(et_Timeout.getText().toString());
                                         if (deviceIsRandom) {
                                             spIndex = random.nextInt(26);
@@ -242,10 +235,9 @@ public class MainActivity extends AppCompatActivity {
                                         }
                                         advMode = advModeSpinner.getSelectedItemPosition();
                                         txMode = txModeSpinner.getSelectedItemPosition();
-                                        tv_Debug.append("[" + intervalDelay + "ms]" + "@" + format.format(new Date()) + " \t");
-                                        tv_Debug.append(deviceNameArr[spIndex] + "\n");
+                                        tv_advState.setText("@" + format.format(new Date()) + " \t"+ deviceNameArr[spIndex] + "\n");
                                         startAdv(getDevice(deviceData, spIndex));
-                                        Thread.sleep(intervalDelay);
+                                        Thread.sleep(20);
                                         if (isStopThread) {
                                             stopAdv();
                                             break;
@@ -262,8 +254,8 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 else {
-                    String str = tv_Debug.getText().toString();
-                    tv_Debug.setText("广播已停止\n\n"+str);
+
+                    tv_advState.setText("广播已停止");
                     isStopThread = true;
                 }
             }
@@ -321,7 +313,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onStartSuccess(AdvertiseSettings settingsInEffect) {
                 super.onStartSuccess(settingsInEffect);
-                Log.e( "BLE", "Advertising State: " + settingsInEffect);
+                Log.i( "BLE", "Advertising State: " + settingsInEffect);
             }
             @Override
             public void onStartFailure(int errorCode) {
@@ -354,7 +346,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onStartSuccess(AdvertiseSettings settingsInEffect) {
                 super.onStartSuccess(settingsInEffect);
-                Log.e( "BLE", "Advertising State: " + settingsInEffect );
+                Log.i( "BLE", "Advertising State: " + settingsInEffect );
             }
             @Override
             public void onStartFailure(int errorCode) {
@@ -367,7 +359,7 @@ public class MainActivity extends AppCompatActivity {
             bluetoothAdapter.setName("AirPods");
             bluetoothLeAdvertiser.startAdvertising(settings, Data, scanData, advertisingCallback);
         } else {
-            Log.d("BLE","Advertising Failed! Need Permission.");
+            Log.e("BLE","Advertising Failed! Need Permission.");
             Toast.makeText(this, "程序需要获取权限！", Toast.LENGTH_SHORT).show();
         }
     }
