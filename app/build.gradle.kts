@@ -8,10 +8,10 @@ android {
 
     defaultConfig {
         applicationId = "cn.sab1e.badapplejuice"
-        minSdk = 31
+        minSdk = 21
         targetSdk = 33
         versionCode = 1
-        versionName = "1.0"
+        versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

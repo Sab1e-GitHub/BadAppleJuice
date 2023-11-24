@@ -16,6 +16,7 @@ import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.icu.util.Calendar;
 import android.os.Build;
@@ -118,7 +119,7 @@ public class MainActivity extends AppCompatActivity {
             "高功率发送模式 广播距离远"
     };
     private int txMode = 3;
-    private String helpString = "\n程序功能介绍：\n\n随机设备：从27个设备中随机选取。\n\n广播包超时时间：设置单个广播包持续广播的时间，最长为180000ms，设置为0即无时间限制。建议值：1000ms\n\n广播包模式：控制广播包的延迟\n\n广播包发送功率：控制广播包发送范围\n\n该工具仅用于学习和交流使用，作者不承担用户使用该工具的任何后果。";
+    private String helpString = null;
     private int spIndex = 0;
     private boolean deviceIsRandom = false;
     private boolean isStopThread = false;
@@ -169,12 +170,22 @@ public class MainActivity extends AppCompatActivity {
         String patten = "HH:mm:ss.SSS";
         SimpleDateFormat format = new SimpleDateFormat(patten);
 
-        tv_Debug.append(helpString);
+        helpString = "\n当前版本号：v"
+                + getVersionName()
+                + "\n作者：Sab1e\n"
+                + "\n程序功能介绍：\n"
+                + "\n随机设备：从27个设备中随机选取。\n"
+                + "\n广播包超时时间：设置单个广播包持续广播的时间，最长为180000ms，设置为0即无时间限制。建议值：1000ms\n"
+                + "\n广播包模式：控制广播包的延迟。\n"
+                + "\n广播包发送功率：控制广播包发送范围。\n"
+                + "\n该工具仅用于学习和交流使用，作者不承担用户使用该工具的任何后果。";
+
+        tv_Debug.setText(helpString);
 
         btn_help.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                tv_Debug.append(helpString);
+                tv_Debug.setText(helpString);
             }
         });
         sw_RandomDevice.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -261,7 +272,20 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-    public byte[] getDevice(byte[][] arr,int num){
+
+    private String getVersionName()
+    {
+        PackageManager packageManager = getPackageManager();
+        PackageInfo packInfo = null;
+        try {
+            packInfo = packageManager.getPackageInfo(getPackageName(),0);
+        } catch (PackageManager.NameNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        String version = packInfo.versionName;
+        return version;
+    }
+    private byte[] getDevice(byte[][] arr,int num){
         byte[] selected = arr[num];
         return selected;
     }
