@@ -4,134 +4,141 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:layout_margin="20dp"
+    android:orientation="vertical"
     tools:context=".MainActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        >
+        android:gravity="center"
+        android:orientation="horizontal">
+
         <Spinner
             android:id="@+id/sp_SelectDevice"
             android:layout_width="200dp"
             android:layout_height="wrap_content"
-            android:spinnerMode="dialog"
-            />
+            android:spinnerMode="dialog" />
+
         <Switch
             android:id="@+id/sw_RandomDevice"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="随机设备"
-            android:textSize="20sp"
-            />
+            android:textSize="20sp" />
     </LinearLayout>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        >
+        android:background="@color/Gray">
+
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            >
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="2dp"
+            android:background="@color/white"
+            android:gravity="center">
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="广播包超时时间(ms)"
-                android:textSize="20sp"
-                />
+                android:text="发射功率" />
+
             <EditText
-                android:id="@+id/et_Timeout"
+                android:id="@+id/et_TxPowerLevel"
+                android:layout_width="50dp"
+                android:layout_height="wrap_content"
+                android:inputType="numberSigned"
+                android:text="1" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="间隔时间" />
+
+            <EditText
+                android:id="@+id/et_Interval"
                 android:layout_width="80dp"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:text="1000"
                 android:inputType="number"
-                />
-        </LinearLayout>
-        <Spinner
-            android:id="@+id/sp_AdvMode"
-            android:layout_width="match_parent"
-            android:layout_height="30dp"
-            android:spinnerMode="dropdown"
-            />
-        <Spinner
-            android:id="@+id/sp_TxMode"
-            android:layout_width="match_parent"
-            android:layout_height="30dp"
-            android:spinnerMode="dropdown"
-            />
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center">
-            <Switch
-                android:id="@+id/sw_ATTACK"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="ATTACK"
-                android:textSize="20sp"
-                android:layout_margin="4dp"
-                android:background="@color/Gray"
-                />
+                android:text="160" />
+
             <Button
-                android:id="@+id/btn_help"
+                android:id="@+id/btn_SetParameter"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_marginLeft="50dp"
-                android:text="帮助"
-                />
+                android:layout_height="match_parent"
+                android:text="设置参数" />
         </LinearLayout>
     </LinearLayout>
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="运行状态"
-        android:textColor="@color/black"
-        android:gravity="center"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <Switch
+            android:id="@+id/sw_ATTACK"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:background="@color/Gray"
+            android:text="ATTACK"
+            android:textSize="20sp" />
+
+        <Button
+            android:id="@+id/btn_help"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:layout_marginLeft="50dp"
+            android:text="帮助" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="运行状态"
+        android:textColor="@color/black" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:background="@color/black"
         android:gravity="center"
-        >
+        android:orientation="vertical">
+
         <TextView
             android:id="@+id/tv_advState"
             android:layout_width="match_parent"
             android:layout_height="20dp"
             android:layout_margin="4dp"
-            android:textColor="@color/white"
             android:background="@color/black"
             android:scrollbars="vertical"
-            />
+            android:textColor="@color/white" />
     </LinearLayout>
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="信息栏"
-        android:textColor="@color/black"
         android:gravity="center"
-        />
+        android:text="信息栏"
+        android:textColor="@color/black" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="@color/black"
-        android:orientation="vertical"
-        >
+        android:orientation="vertical">
+
         <TextView
             android:id="@+id/tv_Debug"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_margin="10dp"
-            android:textColor="@color/white"
             android:background="@color/black"
             android:scrollbars="vertical"
-            />
+            android:textColor="@color/white" />
     </LinearLayout>
 </LinearLayout>

