@@ -163,14 +163,16 @@ public class MainActivity extends AppCompatActivity {
         String patten = "HH:mm:ss.SSS";
         SimpleDateFormat format = new SimpleDateFormat(patten);
 
-        helpString = "\n当前版本号：v"
+        helpString = "\n当前软件版本号：v"
                 + getVersionName()
-                + "\n作者：Sab1e\n"
+                + "\n当前设备SDK版本："
+                + android.os.Build.VERSION.SDK_INT
+                + "\n\n作者：Sab1e\n"
                 + "\n程序功能介绍：\n"
                 + "\n随机设备：从27个设备中随机选取。\n"
                 + "\n发射功率：单位为dBm，取值范围：[-127,1]\n"
                 + "\n间隔时间：单位为0.625ms，取值范围：[160,16777215]\n"
-                + "\n该工具仅用于学习和交流使用，作者不承担用户使用该工具的任何后果。";
+                + "\n声明：该软件仅用于学习和交流使用，作者不承担用户使用该软件的任何后果，使用该软件表示用户同意该声明。";
         tv_Debug.setText(helpString);
         //handler处理UI更新
         Handler handler = new Handler() {
@@ -269,12 +271,13 @@ public class MainActivity extends AppCompatActivity {
                     }
                     tv_Debug.append("\n检测完毕，功能正常！\n");
                     tv_Debug.append("正在获取蓝牙权限...\n");
-                    tv_Debug.append("当前参数：\n\t发射功率：" + txPowerLevel + "dBm\n\t间隔时间：" + (interval * 0.625) + "ms\n\t随机设备：" + deviceIsRandom);
                     if (bluePermission()) {
+                        tv_Debug.append("蓝牙权限获取成功！\n");
+                        tv_Debug.append("当前参数：\n\t发射功率：" + txPowerLevel + "dBm\n\t间隔时间：" + (interval * 0.625) + "ms\n\t随机设备：" + deviceIsRandom);
                         interval = Integer.parseInt(et_Interval.getText().toString());
                         txPowerLevel = Integer.parseInt(et_TxPowerLevel.getText().toString());
                         spIndex = devSpinner.getSelectedItemPosition();
-                        startAdv(getDevice(deviceData, spIndex));
+                        startAdv(deviceData[spIndex]);
                         new Thread(new Runnable() {
                             @Override
                             public void run() {
@@ -286,7 +289,7 @@ public class MainActivity extends AppCompatActivity {
                                             if (currentAdvertisingSet != null) {
                                                 Log.i("BLE", "device modify successful!");
                                                 currentAdvertisingSet.setAdvertisingData(new AdvertiseData.Builder()
-                                                        .addManufacturerData(0x004c, getDevice(deviceData, spIndex))
+                                                        .addManufacturerData(0x004c, deviceData[spIndex])
                                                         .build());
                                             }
                                         } else {
@@ -306,7 +309,7 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }).start();
                     } else {
-                        tv_Debug.append("请授权后重试\n");
+                        tv_Debug.append("\n无权限，请授权后重试！\n");
                         sw_ATTACK.setChecked(false);
                     }
                 } else {
@@ -328,33 +331,32 @@ public class MainActivity extends AppCompatActivity {
         String version = packInfo.versionName;
         return version;
     }
-
-    //从二维数组取出一位数组
-    private byte[] getDevice(byte[][] arr, int num) {
-        byte[] selected = arr[num];
-        return selected;
-    }
-
     //获取蓝牙权限
     private boolean bluePermission() {
         Log.i("BLE", "Requesting Bluetooth Permission...");
-        if (ContextCompat.checkSelfPermission(this,
-                "android.permission.BLUETOOTH_ADVERTISE")
-                != PERMISSION_GRANTED
-                || ContextCompat.checkSelfPermission(this,
-                "android.permission.BLUETOOTH_CONNECT")
-                != PERMISSION_GRANTED
-        ) {
-            if (ContextCompat.checkSelfPermission(this, "android.permission.BLUETOOTH_ADVERTISE") != PERMISSION_GRANTED) {
-                Toast.makeText(this, "无权限：BLUETOOTH_ADVERTISE", Toast.LENGTH_SHORT).show();
+        if(android.os.Build.VERSION.SDK_INT>30) {
+            if (ContextCompat.checkSelfPermission(this,
+                    "android.permission.BLUETOOTH_ADVERTISE")
+                    != PERMISSION_GRANTED
+                    || ContextCompat.checkSelfPermission(this,
+                    "android.permission.BLUETOOTH_CONNECT")
+                    != PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(this, new String[]{
+                        "android.permission.BLUETOOTH_ADVERTISE",
+                        "android.permission.BLUETOOTH_CONNECT",}, 1);
+                return false;
             }
-            if (ContextCompat.checkSelfPermission(this, "android.permission.BLUETOOTH_CONNECT") != PERMISSION_GRANTED) {
-                Toast.makeText(this, "无权限：BLUETOOTH_CONNECT", Toast.LENGTH_SHORT).show();
+        }else{
+            if (ContextCompat.checkSelfPermission(this,
+                    "android.permission.ACCESS_FINE_LOCATION")
+                    != PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(this, new String[]{
+                        "android.permission.ACCESS_FINE_LOCATION",
+                        }, 1);
+                return false;
             }
-            ActivityCompat.requestPermissions(this, new String[]{
-                    "android.permission.BLUETOOTH_ADVERTISE",
-                    "android.permission.BLUETOOTH_CONNECT",}, 1);
-            return false;
         }
         return true;
     }
@@ -364,9 +366,19 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 1) {
-            if (grantResults[0] == PERMISSION_GRANTED) {
-            } else {
-                Toast.makeText(this, "程序需要获取权限！错误代码：01", Toast.LENGTH_SHORT).show();
+            if (grantResults[0] != PERMISSION_GRANTED) {
+                if(android.os.Build.VERSION.SDK_INT>30) {
+                    if (ContextCompat.checkSelfPermission(this, "android.permission.BLUETOOTH_ADVERTISE") != PERMISSION_GRANTED) {
+                        Toast.makeText(this, "无权限：BLUETOOTH_ADVERTISE", Toast.LENGTH_SHORT).show();
+                    }
+                    if (ContextCompat.checkSelfPermission(this, "android.permission.BLUETOOTH_CONNECT") != PERMISSION_GRANTED) {
+                        Toast.makeText(this, "无权限：BLUETOOTH_CONNECT", Toast.LENGTH_SHORT).show();
+                    }
+                }else {
+                    if (ContextCompat.checkSelfPermission(this, "android.permission.ACCESS_FINE_LOCATION") != PERMISSION_GRANTED) {
+                        Toast.makeText(this, "无权限：android.permission.ACCESS_FINE_LOCATION", Toast.LENGTH_SHORT).show();
+                    }
+                }
             }
         }
     }
