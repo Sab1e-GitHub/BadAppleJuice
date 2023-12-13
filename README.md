@@ -1,7 +1,7 @@
 # BadAppleJuice
 本项目参考自[EvilAppleJuice](https://github.com/ckcr4lyf/EvilAppleJuice-ESP32)项目，用于在安卓设备上发送蓝牙广播包，唤起(iPhone)设备的弹窗。
 
-* Issue里尽量提供问题截图！ Issue里尽量提供问题截图！ Issue里尽量提供问题截图！谢谢！
+* Issue里尽量提供问题截图！谢谢！
 
 * 程序图片展示
 
@@ -23,7 +23,6 @@
 
 - [ ] 当前问题：
 1. 无法发送扫描包（低危害）
-1. 权限获取问题（未知原因）
 
 > [!NOTE]
 > 作者是新手，代码写的不是很好，望见谅。
