@@ -1,4 +1,7 @@
 # BadAppleJuice
+
+该项目已停止更新
+
 本项目参考自[EvilAppleJuice](https://github.com/ckcr4lyf/EvilAppleJuice-ESP32)项目，用于在安卓设备上发送蓝牙广播包，唤起(iPhone)设备的弹窗。
 
 > [!NOTE]
