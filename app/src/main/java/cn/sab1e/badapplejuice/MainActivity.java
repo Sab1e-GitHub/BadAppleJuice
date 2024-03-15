@@ -155,21 +155,6 @@ public class MainActivity extends AppCompatActivity {
                 + "\n间隔时间：单位为0.625ms，取值范围：[160,16777215]\n"
                 + "\n声明：该软件仅用于学习和交流使用，作者不承担用户使用该软件的任何后果，使用该软件表示用户同意该声明。";
         tv_Debug.setText(helpString);
-        //handler处理UI更新
-        Handler handler = new Handler() {
-            @Override
-            public void handleMessage(@NonNull Message message) {
-                super.handleMessage(message);
-                switch (message.what) {
-                    case 0:
-                        tv_advState.setText("@" + format.format(new Date()) + " \t" + deviceNameArr[spIndex] + "\n");
-                        break;
-                    case 1:
-                        tv_advState.setText("广播已停止");
-                        break;
-                }
-            }
-        };
         sp_SelectDevice.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @SuppressLint("MissingPermission")
             @Override
@@ -294,9 +279,9 @@ public class MainActivity extends AppCompatActivity {
                                         } else {
                                             spIndex = sp_SelectDevice.getSelectedItemPosition();
                                         }
-                                        handler.sendEmptyMessage(0);
+                                        runOnUiThread(() -> tv_advState.setText("@" + format.format(new Date()) + " \t" + deviceNameArr[spIndex] + "\n"));
                                         if (isStopThread) {
-                                            handler.sendEmptyMessage(1);
+                                            runOnUiThread(() -> tv_advState.setText("广播已停止"));
                                             stopAdv();
                                             break;
                                         }
