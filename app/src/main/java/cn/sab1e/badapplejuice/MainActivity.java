@@ -34,6 +34,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Random;
 
@@ -333,28 +334,37 @@ public class MainActivity extends AppCompatActivity {
     private boolean bluePermission() {
         Log.i("BLE", "Requesting Bluetooth Permission...");
         if (android.os.Build.VERSION.SDK_INT > 30) {
-            if (ContextCompat.checkSelfPermission(this,
-                    Manifest.permission.BLUETOOTH_ADVERTISE) != PERMISSION_GRANTED
-                    || ContextCompat.checkSelfPermission(this,
-                    Manifest.permission.BLUETOOTH_CONNECT) != PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(this, new String[]{
-                        Manifest.permission.BLUETOOTH_ADVERTISE,
-                        Manifest.permission.BLUETOOTH_CONNECT,}, 1);
+            if (checkPermission(Manifest.permission.BLUETOOTH_ADVERTISE, Manifest.permission.BLUETOOTH_CONNECT)) {
+                requestPermission(Manifest.permission.BLUETOOTH_ADVERTISE, Manifest.permission.BLUETOOTH_CONNECT);
                 return false;
             }
         } else {
-            if (ContextCompat.checkSelfPermission(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)
-                    != PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(this, new String[]{
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                }, 1);
+            if (checkPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
+                requestPermission(Manifest.permission.ACCESS_FINE_LOCATION);
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * 封装检测权限的方法
+     *
+     * @param permissions 权限列表
+     * @return 是否有权限
+     */
+    private boolean checkPermission(@NonNull String... permissions) {
+        return Arrays.stream(permissions).allMatch(permission ->
+                ContextCompat.checkSelfPermission(this, permission) != PERMISSION_GRANTED);
+    }
+
+    /**
+     * 封装请求权限的方法
+     *
+     * @param permissions 权限列表
+     */
+    private void requestPermission(@NonNull String... permissions) {
+        ActivityCompat.requestPermissions(this, permissions, 1);
     }
 
     //权限获取结果反馈
@@ -364,14 +374,14 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == 1) {
             if (grantResults[0] != PERMISSION_GRANTED) {
                 if (android.os.Build.VERSION.SDK_INT > 30) {
-                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADVERTISE) != PERMISSION_GRANTED) {
+                    if (checkPermission(Manifest.permission.BLUETOOTH_ADVERTISE)) {
                         Toast.makeText(this, "无权限：BLUETOOTH_ADVERTISE", Toast.LENGTH_SHORT).show();
                     }
-                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PERMISSION_GRANTED) {
+                    if (checkPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
                         Toast.makeText(this, "无权限：BLUETOOTH_CONNECT", Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED) {
+                    if (checkPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
                         Toast.makeText(this, "无权限：android.permission.ACCESS_FINE_LOCATION", Toast.LENGTH_SHORT).show();
                     }
                 }
