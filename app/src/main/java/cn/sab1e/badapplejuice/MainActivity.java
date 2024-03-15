@@ -1,34 +1,20 @@
 package cn.sab1e.badapplejuice;
 
-import static android.content.ContentValues.TAG;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
-import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.AdvertisingSet;
 import android.bluetooth.le.AdvertisingSetCallback;
 import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.BluetoothLeAdvertiser;
-import android.bluetooth.BluetoothManager;
-import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.icu.util.Calendar;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.os.ParcelUuid;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
@@ -38,22 +24,23 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Spinner;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.content.Intent;
 
-import java.nio.charset.Charset;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.UUID;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
 
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
-    private BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+    private final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     AdvertisingSet currentAdvertisingSet = null;
     public byte[][] deviceData = {
             /*1_AirPods*/{0x07, 0x19, 0x07, 0x02, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
@@ -85,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
             /*27_测量TV色彩平衡*/{0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte) 0xc1, 0x1e, 0x60, 0x4c, (byte) 0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
     };
     //private byte[][] testData = {{0x16, 0x01, 0x06, (byte) 0x80, 0x4a, (byte) 0xe4, (byte) 0xe4, 0x45, (byte) 0xe3, 0x65, 0x74, (byte) 0xd3, 0x6c, (byte) 0xee, (byte) 0xb9, 0x27, 0x40, (byte) 0x92, (byte) 0xd3, 0x6c, (byte) 0xee, (byte) 0xc7, 0x0f, 0x40}};
-    private String[] deviceNameArr = {
+    private final String[] deviceNameArr = {
             "AirPods",
             "AirPods Pro",
             "AirPods Max",
@@ -120,19 +107,19 @@ public class MainActivity extends AppCompatActivity {
     private boolean isStopThread = false;
     private int interval = 160;
     private int txPowerLevel = 1;
-    private boolean settingsIsChanged = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Spinner sp_SelectDevice = null;
+        Spinner sp_SelectDevice = findViewById(R.id.sp_SelectDevice);
+        ArrayAdapter<String> devAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, deviceNameArr);
+        sp_SelectDevice.setAdapter(devAdapter);
+        sp_SelectDevice.setSelection(0);
 
-        sp_SelectDevice = findViewById(R.id.sp_SelectDevice);
-
-        Switch sw_ATTACK = findViewById(R.id.sw_ATTACK);
-        Switch sw_RandomDevice = findViewById(R.id.sw_RandomDevice);
+        SwitchCompat sw_ATTACK = findViewById(R.id.sw_ATTACK);
+        SwitchCompat sw_RandomDevice = findViewById(R.id.sw_RandomDevice);
         Button btn_help = findViewById(R.id.btn_help);
         Button btn_SetParameter = findViewById(R.id.btn_SetParameter);
         TextView tv_Debug = findViewById(R.id.tv_Debug);
@@ -140,15 +127,8 @@ public class MainActivity extends AppCompatActivity {
         EditText et_Interval = findViewById(R.id.et_Interval);
         EditText et_TxPowerLevel = findViewById(R.id.et_TxPowerLevel);
 
-        Spinner devSpinner = findViewById(R.id.sp_SelectDevice);
-
         Random random = new Random(100);
         tv_Debug.setMovementMethod(ScrollingMovementMethod.getInstance());
-
-        ArrayAdapter<String> devAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, deviceNameArr);
-        sp_SelectDevice.setAdapter(devAdapter);
-        sp_SelectDevice.setSelection(0);
-
 
         if (bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
             if (bluetoothAdapter.isMultipleAdvertisementSupported()) {
@@ -177,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
         //handler处理UI更新
         Handler handler = new Handler() {
             @Override
-            public void handleMessage(Message message) {
+            public void handleMessage(@NonNull Message message) {
                 super.handleMessage(message);
                 switch (message.what) {
                     case 0:
@@ -189,7 +169,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         };
-        devSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        sp_SelectDevice.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @SuppressLint("MissingPermission")
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -222,7 +202,6 @@ public class MainActivity extends AppCompatActivity {
                         if (bluePermission()) {
                             if (currentAdvertisingSet != null) {
                                 Log.i("BLE", "currentAdvertisingSet modify successful!");
-                                settingsIsChanged = false;
                                 currentAdvertisingSet.setAdvertisingParameters(new AdvertisingSetParameters.Builder()
                                         .setTxPowerLevel(txPowerLevel)
                                         .setInterval(interval)
@@ -251,7 +230,7 @@ public class MainActivity extends AppCompatActivity {
         sw_RandomDevice.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked == true) {
+                if (isChecked) {
                     deviceIsRandom = true;
                     tv_Debug.setText("参数设置成功！\n当前参数：\n\t发射功率：" + txPowerLevel + "dBm\n\t间隔时间：" + (interval * 0.625) + "ms\n\t随机设备：" + deviceIsRandom);
                 } else {
@@ -264,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             @SuppressLint("MissingPermission")
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked == true) {
+                if (isChecked) {
                     isStopThread = false;
                     tv_Debug.setText("");
                     tv_Debug.append("正在进行各项检测");
@@ -295,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
                         tv_Debug.append("当前参数：\n\t发射功率：" + txPowerLevel + "dBm\n\t间隔时间：" + (interval * 0.625) + "ms\n\t随机设备：" + deviceIsRandom);
                         interval = Integer.parseInt(et_Interval.getText().toString());
                         txPowerLevel = Integer.parseInt(et_TxPowerLevel.getText().toString());
-                        spIndex = devSpinner.getSelectedItemPosition();
+                        spIndex = sp_SelectDevice.getSelectedItemPosition();
                         startAdv(deviceData[spIndex]);
                         new Thread(new Runnable() {
                             @Override
@@ -312,7 +291,7 @@ public class MainActivity extends AppCompatActivity {
                                                         .build());
                                             }
                                         } else {
-                                            spIndex = devSpinner.getSelectedItemPosition();
+                                            spIndex = sp_SelectDevice.getSelectedItemPosition();
                                         }
                                         handler.sendEmptyMessage(0);
                                         if (isStopThread) {
@@ -337,41 +316,40 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
     //获取当前APP版本
     private String getVersionName() {
         PackageManager packageManager = getPackageManager();
-        PackageInfo packInfo = null;
+        PackageInfo packInfo;
         try {
             packInfo = packageManager.getPackageInfo(getPackageName(), 0);
         } catch (PackageManager.NameNotFoundException e) {
             throw new RuntimeException(e);
         }
-        String version = packInfo.versionName;
-        return version;
+        return packInfo.versionName;
     }
+
     //获取蓝牙权限
     private boolean bluePermission() {
         Log.i("BLE", "Requesting Bluetooth Permission...");
         if (android.os.Build.VERSION.SDK_INT > 30) {
             if (ContextCompat.checkSelfPermission(this,
-                    "android.permission.BLUETOOTH_ADVERTISE")
-                    != PERMISSION_GRANTED
+                    Manifest.permission.BLUETOOTH_ADVERTISE) != PERMISSION_GRANTED
                     || ContextCompat.checkSelfPermission(this,
-                    "android.permission.BLUETOOTH_CONNECT")
-                    != PERMISSION_GRANTED
+                    Manifest.permission.BLUETOOTH_CONNECT) != PERMISSION_GRANTED
             ) {
                 ActivityCompat.requestPermissions(this, new String[]{
-                        "android.permission.BLUETOOTH_ADVERTISE",
-                        "android.permission.BLUETOOTH_CONNECT",}, 1);
+                        Manifest.permission.BLUETOOTH_ADVERTISE,
+                        Manifest.permission.BLUETOOTH_CONNECT,}, 1);
                 return false;
             }
         } else {
             if (ContextCompat.checkSelfPermission(this,
-                    "android.permission.ACCESS_FINE_LOCATION")
+                    Manifest.permission.ACCESS_FINE_LOCATION)
                     != PERMISSION_GRANTED
             ) {
                 ActivityCompat.requestPermissions(this, new String[]{
-                        "android.permission.ACCESS_FINE_LOCATION",
+                        Manifest.permission.ACCESS_FINE_LOCATION,
                 }, 1);
                 return false;
             }
@@ -386,14 +364,14 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == 1) {
             if (grantResults[0] != PERMISSION_GRANTED) {
                 if (android.os.Build.VERSION.SDK_INT > 30) {
-                    if (ContextCompat.checkSelfPermission(this, "android.permission.BLUETOOTH_ADVERTISE") != PERMISSION_GRANTED) {
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_ADVERTISE) != PERMISSION_GRANTED) {
                         Toast.makeText(this, "无权限：BLUETOOTH_ADVERTISE", Toast.LENGTH_SHORT).show();
                     }
-                    if (ContextCompat.checkSelfPermission(this, "android.permission.BLUETOOTH_CONNECT") != PERMISSION_GRANTED) {
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PERMISSION_GRANTED) {
                         Toast.makeText(this, "无权限：BLUETOOTH_CONNECT", Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    if (ContextCompat.checkSelfPermission(this, "android.permission.ACCESS_FINE_LOCATION") != PERMISSION_GRANTED) {
+                    if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PERMISSION_GRANTED) {
                         Toast.makeText(this, "无权限：android.permission.ACCESS_FINE_LOCATION", Toast.LENGTH_SHORT).show();
                     }
                 }
