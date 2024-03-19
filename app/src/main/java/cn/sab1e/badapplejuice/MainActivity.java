@@ -1,34 +1,18 @@
 package cn.sab1e.badapplejuice;
 
-import static android.content.ContentValues.TAG;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
-import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.AdvertisingSet;
 import android.bluetooth.le.AdvertisingSetCallback;
 import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.BluetoothLeAdvertiser;
-import android.bluetooth.BluetoothManager;
-import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.icu.util.Calendar;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
-import android.os.ParcelUuid;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.view.View;
@@ -38,23 +22,30 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.Spinner;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.content.Intent;
 
-import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.UUID;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String TAG = "BLE";
+
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
+
     private BluetoothLeAdvertiser bluetoothLeAdvertiser;
-    private BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+    private final BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
     AdvertisingSet currentAdvertisingSet = null;
+    /** @noinspection SpellCheckingInspection*/
     public byte[][] deviceData = {
             /*1_AirPods*/{0x07, 0x19, 0x07, 0x02, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
             /*2_AirPods Pro*/{0x07, 0x19, 0x07, 0x0e, 0x20, 0x75, (byte) 0xaa, 0x30, 0x01, 0x00, 0x00, 0x45, 0x12, 0x12, 0x12, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
@@ -84,8 +75,8 @@ public class MainActivity extends AppCompatActivity {
             /*26_转移手机号码*/{0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte) 0xc1, 0x02, 0x60, 0x4c, (byte) 0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
             /*27_测量TV色彩平衡*/{0x04, 0x04, 0x2a, 0x00, 0x00, 0x00, 0x0f, 0x05, (byte) 0xc1, 0x1e, 0x60, 0x4c, (byte) 0x95, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00},
     };
-    //private byte[][] testData = {{0x16, 0x01, 0x06, (byte) 0x80, 0x4a, (byte) 0xe4, (byte) 0xe4, 0x45, (byte) 0xe3, 0x65, 0x74, (byte) 0xd3, 0x6c, (byte) 0xee, (byte) 0xb9, 0x27, 0x40, (byte) 0x92, (byte) 0xd3, 0x6c, (byte) 0xee, (byte) 0xc7, 0x0f, 0x40}};
-    private String[] deviceNameArr = {
+    /** @noinspection SpellCheckingInspection*/ //private byte[][] testData = {{0x16, 0x01, 0x06, (byte) 0x80, 0x4a, (byte) 0xe4, (byte) 0xe4, 0x45, (byte) 0xe3, 0x65, 0x74, (byte) 0xd3, 0x6c, (byte) 0xee, (byte) 0xb9, 0x27, 0x40, (byte) 0x92, (byte) 0xd3, 0x6c, (byte) 0xee, (byte) 0xc7, 0x0f, 0x40}};
+    private final String[] deviceNameArr = {
             "AirPods",
             "AirPods Pro",
             "AirPods Max",
@@ -120,19 +111,20 @@ public class MainActivity extends AppCompatActivity {
     private boolean isStopThread = false;
     private int interval = 160;
     private int txPowerLevel = 1;
-    private boolean settingsIsChanged = false;
 
+    @SuppressLint("SetTextI18n")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Spinner sp_SelectDevice = null;
+        Spinner sp_SelectDevice = findViewById(R.id.sp_SelectDevice);
+        ArrayAdapter<String> devAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, deviceNameArr);
+        sp_SelectDevice.setAdapter(devAdapter);
+        sp_SelectDevice.setSelection(0);
 
-        sp_SelectDevice = findViewById(R.id.sp_SelectDevice);
-
-        Switch sw_ATTACK = findViewById(R.id.sw_ATTACK);
-        Switch sw_RandomDevice = findViewById(R.id.sw_RandomDevice);
+        SwitchCompat sw_ATTACK = findViewById(R.id.sw_ATTACK);
+        SwitchCompat sw_RandomDevice = findViewById(R.id.sw_RandomDevice);
         Button btn_help = findViewById(R.id.btn_help);
         Button btn_SetParameter = findViewById(R.id.btn_SetParameter);
         TextView tv_Debug = findViewById(R.id.tv_Debug);
@@ -140,15 +132,8 @@ public class MainActivity extends AppCompatActivity {
         EditText et_Interval = findViewById(R.id.et_Interval);
         EditText et_TxPowerLevel = findViewById(R.id.et_TxPowerLevel);
 
-        Spinner devSpinner = findViewById(R.id.sp_SelectDevice);
-
         Random random = new Random(100);
         tv_Debug.setMovementMethod(ScrollingMovementMethod.getInstance());
-
-        ArrayAdapter<String> devAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, deviceNameArr);
-        sp_SelectDevice.setAdapter(devAdapter);
-        sp_SelectDevice.setSelection(0);
-
 
         if (bluetoothAdapter != null && bluetoothAdapter.isEnabled()) {
             if (bluetoothAdapter.isMultipleAdvertisementSupported()) {
@@ -159,9 +144,6 @@ public class MainActivity extends AppCompatActivity {
         } else {
             Toast.makeText(this, "您的设备不支持蓝牙！错误代码：04", Toast.LENGTH_SHORT).show();
         }
-
-        String patten = "HH:mm:ss.SSS";
-        SimpleDateFormat format = new SimpleDateFormat(patten);
 
         helpString = "\n当前软件版本号：v"
                 + getVersionName()
@@ -174,28 +156,13 @@ public class MainActivity extends AppCompatActivity {
                 + "\n间隔时间：单位为0.625ms，取值范围：[160,16777215]\n"
                 + "\n声明：该软件仅用于学习和交流使用，作者不承担用户使用该软件的任何后果，使用该软件表示用户同意该声明。";
         tv_Debug.setText(helpString);
-        //handler处理UI更新
-        Handler handler = new Handler() {
-            @Override
-            public void handleMessage(Message message) {
-                super.handleMessage(message);
-                switch (message.what) {
-                    case 0:
-                        tv_advState.setText("@" + format.format(new Date()) + " \t" + deviceNameArr[spIndex] + "\n");
-                        break;
-                    case 1:
-                        tv_advState.setText("广播已停止");
-                        break;
-                }
-            }
-        };
-        devSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        sp_SelectDevice.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @SuppressLint("MissingPermission")
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (bluePermission()) {
                     if (currentAdvertisingSet != null) {
-                        Log.i("BLE", "device modify successful!");
+                        Log.i(TAG, "device modify successful!");
                         currentAdvertisingSet.setAdvertisingData(new AdvertiseData.Builder()
                                 .addManufacturerData(0x004c, deviceData[spIndex])
                                 .build());
@@ -221,8 +188,7 @@ public class MainActivity extends AppCompatActivity {
                     if ((interval >= 160 && interval <= 16777215) && (txPowerLevel >= -127 && txPowerLevel <= 1)) {
                         if (bluePermission()) {
                             if (currentAdvertisingSet != null) {
-                                Log.i("BLE", "currentAdvertisingSet modify successful!");
-                                settingsIsChanged = false;
+                                Log.i(TAG, "currentAdvertisingSet modify successful!");
                                 currentAdvertisingSet.setAdvertisingParameters(new AdvertisingSetParameters.Builder()
                                         .setTxPowerLevel(txPowerLevel)
                                         .setInterval(interval)
@@ -242,29 +208,16 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-        btn_help.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                tv_Debug.setText(helpString);
-            }
-        });
-        sw_RandomDevice.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked == true) {
-                    deviceIsRandom = true;
-                    tv_Debug.setText("参数设置成功！\n当前参数：\n\t发射功率：" + txPowerLevel + "dBm\n\t间隔时间：" + (interval * 0.625) + "ms\n\t随机设备：" + deviceIsRandom);
-                } else {
-                    deviceIsRandom = false;
-                    tv_Debug.setText("参数设置成功！\n当前参数：\n\t发射功率：" + txPowerLevel + "dBm\n\t间隔时间：" + (interval * 0.625) + "ms\n\t随机设备：" + deviceIsRandom);
-                }
-            }
+        btn_help.setOnClickListener(v -> tv_Debug.setText(helpString));
+        sw_RandomDevice.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            deviceIsRandom = isChecked;
+            tv_Debug.setText("参数设置成功！\n当前参数：\n\t发射功率：" + txPowerLevel + "dBm\n\t间隔时间：" + (interval * 0.625) + "ms\n\t随机设备：" + deviceIsRandom);
         });
         sw_ATTACK.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             @SuppressLint("MissingPermission")
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked == true) {
+                if (isChecked) {
                     isStopThread = false;
                     tv_Debug.setText("");
                     tv_Debug.append("正在进行各项检测");
@@ -295,35 +248,32 @@ public class MainActivity extends AppCompatActivity {
                         tv_Debug.append("当前参数：\n\t发射功率：" + txPowerLevel + "dBm\n\t间隔时间：" + (interval * 0.625) + "ms\n\t随机设备：" + deviceIsRandom);
                         interval = Integer.parseInt(et_Interval.getText().toString());
                         txPowerLevel = Integer.parseInt(et_TxPowerLevel.getText().toString());
-                        spIndex = devSpinner.getSelectedItemPosition();
+                        spIndex = sp_SelectDevice.getSelectedItemPosition();
                         startAdv(deviceData[spIndex]);
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                while (true) {
-                                    try {
-                                        //随机设备
-                                        if (deviceIsRandom) {
-                                            spIndex = random.nextInt(26);
-                                            if (currentAdvertisingSet != null) {
-                                                Log.i("BLE", "device modify successful!");
-                                                currentAdvertisingSet.setAdvertisingData(new AdvertiseData.Builder()
-                                                        .addManufacturerData(0x004c, deviceData[spIndex])
-                                                        .build());
-                                            }
-                                        } else {
-                                            spIndex = devSpinner.getSelectedItemPosition();
+                        new Thread(() -> {
+                            while (true) {
+                                try {
+                                    //随机设备
+                                    if (deviceIsRandom) {
+                                        spIndex = random.nextInt(26);
+                                        if (currentAdvertisingSet != null) {
+                                            Log.i(TAG, "device modify successful!");
+                                            currentAdvertisingSet.setAdvertisingData(new AdvertiseData.Builder()
+                                                    .addManufacturerData(0x004c, deviceData[spIndex])
+                                                    .build());
                                         }
-                                        handler.sendEmptyMessage(0);
-                                        if (isStopThread) {
-                                            handler.sendEmptyMessage(1);
-                                            stopAdv();
-                                            break;
-                                        }
-                                        Thread.sleep(100);
-                                    } catch (InterruptedException e) {
-                                        throw new RuntimeException(e);
+                                    } else {
+                                        spIndex = sp_SelectDevice.getSelectedItemPosition();
                                     }
+                                    runOnUiThread(() -> tv_advState.setText("@" + LocalTime.now().format(formatter) + " \t" + deviceNameArr[spIndex] + "\n"));
+                                    if (isStopThread) {
+                                        runOnUiThread(() -> tv_advState.setText("广播已停止"));
+                                        stopAdv();
+                                        break;
+                                    }
+                                    Thread.sleep(100);
+                                } catch (InterruptedException e) {
+                                    throw new RuntimeException(e);
                                 }
                             }
                         }).start();
@@ -337,46 +287,54 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
+
     //获取当前APP版本
     private String getVersionName() {
         PackageManager packageManager = getPackageManager();
-        PackageInfo packInfo = null;
+        PackageInfo packInfo;
         try {
             packInfo = packageManager.getPackageInfo(getPackageName(), 0);
         } catch (PackageManager.NameNotFoundException e) {
             throw new RuntimeException(e);
         }
-        String version = packInfo.versionName;
-        return version;
+        return packInfo.versionName;
     }
+
     //获取蓝牙权限
     private boolean bluePermission() {
-        Log.i("BLE", "Requesting Bluetooth Permission...");
+        Log.i(TAG, "Requesting Bluetooth Permission...");
         if (android.os.Build.VERSION.SDK_INT > 30) {
-            if (ContextCompat.checkSelfPermission(this,
-                    "android.permission.BLUETOOTH_ADVERTISE")
-                    != PERMISSION_GRANTED
-                    || ContextCompat.checkSelfPermission(this,
-                    "android.permission.BLUETOOTH_CONNECT")
-                    != PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(this, new String[]{
-                        "android.permission.BLUETOOTH_ADVERTISE",
-                        "android.permission.BLUETOOTH_CONNECT",}, 1);
+            if (checkPermission(Manifest.permission.BLUETOOTH_ADVERTISE, Manifest.permission.BLUETOOTH_CONNECT)) {
+                requestPermission(Manifest.permission.BLUETOOTH_ADVERTISE, Manifest.permission.BLUETOOTH_CONNECT);
                 return false;
             }
         } else {
-            if (ContextCompat.checkSelfPermission(this,
-                    "android.permission.ACCESS_FINE_LOCATION")
-                    != PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(this, new String[]{
-                        "android.permission.ACCESS_FINE_LOCATION",
-                }, 1);
+            if (checkPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
+                requestPermission(Manifest.permission.ACCESS_FINE_LOCATION);
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * 封装检测权限的方法
+     *
+     * @param permissions 权限列表
+     * @return 是否有权限
+     */
+    private boolean checkPermission(@NonNull String... permissions) {
+        return Arrays.stream(permissions).allMatch(permission ->
+                ContextCompat.checkSelfPermission(this, permission) != PERMISSION_GRANTED);
+    }
+
+    /**
+     * 封装请求权限的方法
+     *
+     * @param permissions 权限列表
+     */
+    private void requestPermission(@NonNull String... permissions) {
+        ActivityCompat.requestPermissions(this, permissions, 1);
     }
 
     //权限获取结果反馈
@@ -386,14 +344,14 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == 1) {
             if (grantResults[0] != PERMISSION_GRANTED) {
                 if (android.os.Build.VERSION.SDK_INT > 30) {
-                    if (ContextCompat.checkSelfPermission(this, "android.permission.BLUETOOTH_ADVERTISE") != PERMISSION_GRANTED) {
+                    if (checkPermission(Manifest.permission.BLUETOOTH_ADVERTISE)) {
                         Toast.makeText(this, "无权限：BLUETOOTH_ADVERTISE", Toast.LENGTH_SHORT).show();
                     }
-                    if (ContextCompat.checkSelfPermission(this, "android.permission.BLUETOOTH_CONNECT") != PERMISSION_GRANTED) {
+                    if (checkPermission(Manifest.permission.BLUETOOTH_CONNECT)) {
                         Toast.makeText(this, "无权限：BLUETOOTH_CONNECT", Toast.LENGTH_SHORT).show();
                     }
                 } else {
-                    if (ContextCompat.checkSelfPermission(this, "android.permission.ACCESS_FINE_LOCATION") != PERMISSION_GRANTED) {
+                    if (checkPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
                         Toast.makeText(this, "无权限：android.permission.ACCESS_FINE_LOCATION", Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -407,24 +365,23 @@ public class MainActivity extends AppCompatActivity {
         AdvertisingSetCallback advertisingCallback = new AdvertisingSetCallback() {
             @Override
             public void onAdvertisingSetStarted(AdvertisingSet advertisingSet, int txPower, int status) {
-                Log.i("BLE", "onAdvertisingSetStarted(): txPower:" + txPower + " , status: "
-                        + status);
+                Log.i(TAG, "onAdvertisingSetStarted(): txPower:" + txPower + " , status: " + status);
                 currentAdvertisingSet = advertisingSet;
             }
 
             @Override
             public void onAdvertisingDataSet(AdvertisingSet advertisingSet, int status) {
-                Log.i("BLE", "onAdvertisingDataSet() :status:" + status);
+                Log.i(TAG, "onAdvertisingDataSet() :status:" + status);
             }
 
             @Override
             public void onScanResponseDataSet(AdvertisingSet advertisingSet, int status) {
-                Log.i("BLE", "onScanResponseDataSet(): status:" + status);
+                Log.i(TAG, "onScanResponseDataSet(): status:" + status);
             }
 
             @Override
             public void onAdvertisingSetStopped(AdvertisingSet advertisingSet) {
-                Log.i("BLE", "onAdvertisingSetStopped():");
+                Log.i(TAG, "onAdvertisingSetStopped():");
             }
         };
         if (bluePermission()) {
@@ -453,31 +410,30 @@ public class MainActivity extends AppCompatActivity {
         AdvertisingSetCallback advertisingCallback = new AdvertisingSetCallback() {
             @Override
             public void onAdvertisingSetStarted(AdvertisingSet advertisingSet, int txPower, int status) {
-                Log.i("BLE", "onAdvertisingSetStarted(): txPower:" + txPower + " , status: "
-                        + status);
+                Log.i(TAG, "onAdvertisingSetStarted(): txPower:" + txPower + " , status: " + status);
                 currentAdvertisingSet = advertisingSet;
             }
 
             @Override
             public void onAdvertisingDataSet(AdvertisingSet advertisingSet, int status) {
-                Log.i("BLE", "onAdvertisingDataSet() :status:" + status);
+                Log.i(TAG, "onAdvertisingDataSet() :status:" + status);
             }
 
             @Override
             public void onScanResponseDataSet(AdvertisingSet advertisingSet, int status) {
-                Log.i("BLE", "onScanResponseDataSet(): status:" + status);
+                Log.i(TAG, "onScanResponseDataSet(): status:" + status);
             }
 
             @Override
             public void onAdvertisingSetStopped(AdvertisingSet advertisingSet) {
-                Log.i("BLE", "onAdvertisingSetStopped():");
+                Log.i(TAG, "onAdvertisingSetStopped():");
             }
         };
         if (bluePermission()) {
-            Log.d("BLE", "Advertising Successful!");
+            Log.d(TAG, "Advertising Successful!");
             bluetoothLeAdvertiser.startAdvertisingSet(parameters, Data, scanData, null, null, advertisingCallback);
         } else {
-            Log.e("BLE", "Advertising Failed! Need Permission.");
+            Log.e(TAG, "Advertising Failed! Need Permission.");
             Toast.makeText(this, "程序需要获取权限！错误代码：02", Toast.LENGTH_SHORT).show();
         }
     }
